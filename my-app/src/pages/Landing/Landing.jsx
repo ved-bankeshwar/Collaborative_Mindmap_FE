@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Navbar2 from "../../components/Navbar/Navbar2";
 import TemplateCard from '../../components/TemplateCard/TemplateCard';
 import './Landing.css';
 
@@ -47,7 +48,7 @@ const Landing = () => {
 
   return (
     <div className="landing-container">
-      
+        <Navbar2 />
       {/* --- LIVE MP4 BACKGROUND LAYER --- */}
       <div className="video-background-wrapper">
         <video 

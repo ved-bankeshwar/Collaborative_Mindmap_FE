@@ -4,11 +4,12 @@ import GlassSurface from "./GlassSurface";
 const Navbar2: React.FC = () => {
   return (
     <GlassSurface
-      width="100%"
-      height="auto" 
-      borderRadius={0}
-      className="fixed top-0 left-0 w-full z-[1000] min-h-[80px]"
-    >
+    width="100%"
+    height="auto"
+    borderRadius={0}
+    className="fixed top-0 left-0 w-full z-[1000] min-h-[80px]"
+  >
+   
       <nav className="relative z-10 box-border flex w-full flex-col items-center gap-[15px] p-[15px] sm:h-[80px] sm:flex-row sm:justify-between sm:p-0 sm:px-[25px] md:px-[50px]">
         {/* Left Side */}
         <div className="flex items-center">

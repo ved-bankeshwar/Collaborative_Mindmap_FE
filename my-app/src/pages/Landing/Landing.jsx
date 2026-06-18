@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import Navbar2 from "../../components/Navbar/Navbar2";
-import TemplateCard from '../../components/TemplateCard/TemplateCard';
+import Navbar2 from "../../components/Navbar2.tsx";
+import TemplateCard from '../../components/TemplateCard.tsx';
 import './Landing.css';
+import { useNavigate } from "react-router-dom";
 
 // Import your asset images and background video file
 import bgVideo from '../../assets/background.mp4'; 
@@ -17,6 +18,7 @@ import temp8Img from '../../assets/shadesofbrowntemp.jpg';
 import temp9Img from '../../assets/yellowwhitetemp.jpg';
 
 const Landing = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Recents');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -75,11 +77,17 @@ const Landing = () => {
 
         <div className="templates-grid">
           {primaryTemplates.map((template) => (
-            <TemplateCard 
-              key={template.id} 
-              title={template.title} 
-              image={template.image} 
-            />
+            <div
+              key={template.id}
+              onClick={() => navigate("/workspace")}
+              style={{ cursor: "pointer" }}
+            >
+              <TemplateCard 
+                key={template.id} 
+                title={template.title} 
+                image={template.image} 
+              />
+          </div>
           ))}
         </div>
 
@@ -126,14 +134,19 @@ const Landing = () => {
               <button className="modal-close-btn" onClick={() => setIsModalOpen(false)}>×</button>
             </div>
             <div className="modal-grid">
-              {modalTemplates.map((template) => (
-                <TemplateCard 
-                  key={`modal-${template.id}`} 
-                  title={template.title} 
-                  image={template.image} 
-                />
-              ))}
-            </div>
+  {modalTemplates.map((template) => (
+    <div
+      key={`modal-${template.id}`}
+      onClick={() => navigate("/workspace")}
+      style={{ cursor: "pointer" }}
+    >
+      <TemplateCard
+        title={template.title}
+        image={template.image}
+      />
+    </div>
+  ))}
+</div>
           </div>
         </div>
       )}

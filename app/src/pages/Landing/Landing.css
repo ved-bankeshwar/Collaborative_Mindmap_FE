@@ -1,0 +1,226 @@
+.landing-container {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  color: #ffffff;
+  /* Change 'system-ui' to 'Inter' here */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+}
+
+/* --- THE FIX: BULLETPROOF VIDEO BACKGROUND STACKING --- */
+.video-background-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1; /* Pushes video plane entirely behind everything else */
+  overflow: hidden;
+  pointer-events: none; /* Allows mouse clicks to safely pass through to grid templates */
+}
+
+.bg-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Forces the video to cover widescreen without distortion */
+}
+
+.video-overlay-tint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(10, 10, 25, 0.75); /* Protects text typography contrast */
+}
+
+/* --- FOREGROUND CONTENT (OVERLAID AT THE TOP) --- */
+.landing-content {
+  position: relative;
+  z-index: 1; /* Pulls all grids, text, and tables above your fixed background layer */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: clamp(20px, 4vw, 40px) 20px;
+}
+
+/* --- MAIN DASHBOARD STRUCTURING --- */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 24px;
+}
+
+.section-header h2 {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  letter-spacing: 1px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.more-templates-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.more-templates-btn:hover {
+  opacity: 0.8;
+}
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: clamp(15px, 3vw, 30px);
+  margin-bottom: 40px;
+}
+
+/* --- RECENT FILES SECTION --- */
+/* --- RECENT FILES SECTION --- */
+.files-section {
+  /* Give more separation between the templates grid and your files list */
+  margin-top: clamp(40px, 6vw, 70px);
+}
+
+.tab-navigation {
+  display: flex;
+  flex-wrap: wrap; /* Keeps it mobile-safe by letting buttons wrap if the screen gets too thin */
+  
+  /* --- RESPONSIVE EXTRA SPACING --- */
+  /* This scales the gap dynamically between 20px on mobile and 48px on wide screens */
+  gap: clamp(20px, 4vw, 48px); 
+  
+  /* Adds extra padding beneath the button row before the table starts */
+  margin-bottom: 35px; 
+}
+
+.tab-btn {
+  background-color: #f3e8eb;
+  color: #111;
+  border: none;
+  padding: 10px 24px; /* Increased padding for more prominent tab buttons */
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 1rem; /* Marginally scaled up font size */
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s ease;
+}
+
+/* TABLE CONTAINER: Scaled width up from 600px to 800px to balance your widescreen look */
+.files-table-container {
+  max-width: 800px; 
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  /* --- REMOVE THE RECTANGLE BACKGROUND HERE --- */
+  background: none !important; /* Removes the solid panel background entirely */
+  padding: 10px 0;             /* Removed the horizontal padding so it aligns with your headers */
+}
+
+.files-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 500px;
+}
+
+/* HEADERS: Stylized column titles */
+.files-table th {
+  padding: 16px 0; /* Extra vertical space above/below headers */
+  font-weight: 600;
+  color: #a0a5b5; /* Slightly brighter contrast */
+  font-size: 1.05rem; /* Noticeable typography scale up */
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15); /* Stronger dividing line */
+  font-family: 'Inter', sans-serif;
+}
+
+/* FILE ROWS: This directly controls the font sizing and tracking gaps you asked about */
+.files-table td {
+  padding: 20px 0; /* Increase this value to add more vertical space BETWEEN row items */
+  font-size: 1.1rem; /* Noticeable bump to make file names legible on big monitors */
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Soft break lines between elements */
+  font-family: 'Inter', sans-serif;
+}
+
+/* Optional: Subtle row highlight when hovering over file rows */
+.files-table tbody tr:hover td {
+  color: #e2cad1; /* Subtle tint shift on hover */
+  cursor: pointer;
+}
+
+
+/* --- MODAL OVERLAYS SYSTEM --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-container {
+  background-color: #13141c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  max-width: 1000px;
+  max-height: 85vh;
+  border-radius: 12px;
+  padding: clamp(20px, 4vw, 35px);
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 15px;
+}
+
+.modal-header h2 {
+  font-size: 1.5rem;
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 2rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.modal-close-btn:hover {
+  color: #fff;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}

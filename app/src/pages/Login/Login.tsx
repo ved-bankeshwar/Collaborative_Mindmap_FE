@@ -1,70 +1,89 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
+import bgVideo from "../../assets/videos/bgvideo.mp4";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    // Navigates to /dashboard based on your existing logic
     navigate("/dashboard");
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden text-white font-sans">
+    <div className="relative w-full h-screen overflow-hidden text-white font-sans">
       {/* Background Video */}
       <video
         autoPlay
         loop
         muted
-        className="fixed top-0 left-0 w-full h-full object-cover -z-20"
-      ></video>
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+      >
+        <source src={bgVideo} type="video/mp4" />
+      </video>
 
-      {/* Dark Overlay (Replaces the .login-page::before CSS) */}
-      <div className="fixed inset-0 bg-black/45 -z-10"></div>
+      {/* Dark Overlay */}
+      <div className="absolute inset-0 bg-black/50"></div>
 
-      {/* Navbar */}
-      <Navbar />
+      {/* Main Content */}
+      <div className="relative z-10 flex flex-col min-h-screen">
+        {/* Navbar */}
+        <Navbar />
 
-      {/* Login Section */}
-      <div className="flex flex-col gap-5 w-[85%] max-w-[420px] mx-auto mt-[100px] items-center text-center sm:w-[90%] sm:mx-0 sm:ml-10 sm:items-start sm:text-left md:ml-20 md:mt-[70px]">
-        <h1 className="text-[2.5rem] font-bold sm:text-5xl md:text-6xl">
-          Site Name
-        </h1>
+        {/* Centered Login Section */}
+        <div className="flex-1 flex flex-col items-center justify-center px-4">
+          {/* Heading */}
+          <h1 className="text-5xl md:text-7xl font-bold mb-4 text-center">
+            Site Name
+          </h1>
 
-        <h2 className="text-[1.5rem] font-normal sm:text-[1.7rem] md:text-4xl">
-          Login
-        </h2>
+          <p className="text-lg md:text-2xl text-gray-300 mb-10 text-center">
+            Welcome back. Sign in to continue.
+          </p>
 
-        <input
-          type="email"
-          placeholder="Enter Email"
-          className="w-full p-[14px] md:p-4 border-none rounded-xl outline-none text-base text-gray-900 bg-white"
-        />
+          {/* Glass Login Card */}
+          <div className="w-full max-w-xl rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl p-8 md:p-10 shadow-2xl">
+            <h2 className="text-3xl md:text-4xl font-semibold text-center mb-8">
+              Login
+            </h2>
 
-        <input
-          type="password"
-          placeholder="Enter Password"
-          className="w-full p-[14px] md:p-4 border-none rounded-xl outline-none text-base text-gray-900 bg-white"
-        />
+            <div className="flex flex-col gap-5">
+              <input
+                type="email"
+                placeholder="Enter Email"
+                className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-4 text-white placeholder-gray-300 outline-none focus:border-white/40"
+              />
 
-        <button
-          className="w-full md:w-[220px] p-3 rounded-[30px] border border-white/40 bg-white/10 text-white cursor-pointer transition duration-300 hover:bg-white/15"
-          onClick={handleLogin}
-        >
-          Sign in with Google
-        </button>
+              <input
+                type="password"
+                placeholder="Enter Password"
+                className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-4 text-white placeholder-gray-300 outline-none focus:border-white/40"
+              />
 
-        <button
-          className="w-full mt-2.5 p-2.5 cursor-pointer bg-white text-black font-semibold rounded-lg transition hover:bg-gray-200"
-          onClick={handleLogin}
-        >
-          Login
-        </button>
+              <button
+                onClick={handleLogin}
+                className="w-full rounded-xl border border-white/20 bg-white/10 py-4 text-white font-medium backdrop-blur-md transition-all duration-300 hover:bg-white/20"
+              >
+                Sign in with Google
+              </button>
 
-        <p className="mt-2.5 text-[0.95rem] md:text-base">
-          Don’t have an account? Sign up here!
-        </p>
+              <button
+                onClick={handleLogin}
+                className="w-full rounded-xl bg-white py-4 text-black font-semibold transition-all duration-300 hover:bg-gray-200"
+              >
+                Login
+              </button>
+
+              <p className="mt-2 text-center text-gray-300">
+                Don't have an account?
+                <span className="ml-2 cursor-pointer text-purple-300 hover:underline">
+                  Sign up here!
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

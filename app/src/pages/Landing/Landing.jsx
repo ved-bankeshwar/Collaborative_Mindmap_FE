@@ -5,7 +5,7 @@ import "./Landing.css";
 import { useNavigate } from "react-router-dom";
 
 // Import your asset images and background video file
-import bgVideo from "../../assets/background.mp4";
+import bgVideo from "../../assets/videos/bgvideo.mp4";
 import blankImg from "../../assets/blanktemplate.jpg";
 import temp1Img from "../../assets/bluewhitetemp.jpg";
 import temp2Img from "../../assets/brownpurpletemp.jpg";

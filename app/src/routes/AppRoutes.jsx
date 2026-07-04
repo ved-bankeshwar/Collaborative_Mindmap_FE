@@ -1,24 +1,61 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from '../pages/Login/Login'; 
-import Landing from '../pages/Landing/Landing';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
+import Login from "../pages/Login/Login";
+import Signup from "../pages/Signup/Signup";
+import Landing from "../pages/Landing/Landing";
 import Workspace from "../pages/Workspace/Workspace";
+
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
 
 const AppRoutes = () => {
   return (
     <Router>
       <Routes>
-        {/* The Root url goes directly to Login */}
+
+        {/* Login */}
         <Route path="/" element={<Login />} />
-        
-        {/* Your dashboard URL handles the Landing page */}
-        <Route path="/dashboard" element={<Landing />} />
 
-        <Route path="/workspace" element={<Workspace />} />
+        {/* Signup */}
+        <Route path="/signup" element={<Signup />} />
 
-        {/* CATCH-ALL REDIRECT: If the browser tries to load ANY other path (like a cached fallback), 
-            it automatically forces them back to the Login screen safely. */}
+        {/* Dashboard */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Landing />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Workspace */}
+        <Route
+          path="/workspace"
+          element={
+            <ProtectedRoute>
+              <Workspace />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Redirect unknown URLs */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
     </Router>
   );

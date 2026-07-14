@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import Navbar from "../../components/Navbar";
 import bgVideo from "../../assets/videos/bgvideo.mp4";
 import api from "../../api/api";
@@ -11,6 +12,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // -------------------- Email Login --------------------
   const handleLogin = async () => {
     if (!email || !password) {
       alert("Please enter your email and password");
@@ -44,6 +46,32 @@ const Login: React.FC = () => {
     }
   };
 
+  // -------------------- Google Login --------------------
+  const handleGoogleLogin = async (credentialResponse: any) => {
+    try {
+      const idToken = credentialResponse.credential;
+
+      const response = await api.post("/auth/google", {
+        idToken,
+      });
+
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      alert("Google Login Successful!");
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error(error);
+
+      if (error.response) {
+        alert(error.response.data.message || "Google Login Failed");
+      } else {
+        alert("Unable to connect to backend");
+      }
+    }
+  };
+
   return (
     <div className="relative w-full h-screen overflow-hidden text-white font-sans">
       {/* Background Video */}
@@ -68,7 +96,7 @@ const Login: React.FC = () => {
           <div className="w-full max-w-xl rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl p-8 md:p-10 shadow-2xl">
 
             <h1 className="text-5xl font-bold text-center mb-4">
-              Site Name
+              Mind-Map
             </h1>
 
             <p className="text-lg text-gray-300 text-center mb-8">
@@ -93,12 +121,17 @@ const Login: React.FC = () => {
                 className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-4 text-white placeholder-gray-300 outline-none focus:border-white/40"
               />
 
-              <button
-                className="w-full rounded-xl border border-white/20 bg-white/10 py-4 text-white font-medium backdrop-blur-md transition-all duration-300 hover:bg-white/20"
-              >
-                Sign in with Google
-              </button>
+              {/* Google Login */}
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleLogin}
+                  onError={() => {
+                    alert("Google Login Failed");
+                  }}
+                />
+              </div>
 
+              {/* Email Login */}
               <button
                 onClick={handleLogin}
                 disabled={loading}

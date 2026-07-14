@@ -13,7 +13,7 @@ const Navbar: React.FC = () => {
         {/* Left Side */}
         <div className="flex items-center">
           <h2 className="text-[18px] font-bold tracking-[1px] text-white sm:text-[24px] md:text-[32px]">
-            Site Name
+            Mind-Map
           </h2>
         </div>
 
@@ -23,25 +23,25 @@ const Navbar: React.FC = () => {
             href="/"
             className="text-[14px] font-medium text-white no-underline transition duration-300 hover:opacity-70 sm:text-[16px]"
           >
-            Page
+          
           </a>
 
           <a
             href="/"
             className="text-[14px] font-medium text-white no-underline transition duration-300 hover:opacity-70 sm:text-[16px]"
           >
-            Page
+          
           </a>
 
           <a
             href="/"
             className="text-[14px] font-medium text-white no-underline transition duration-300 hover:opacity-70 sm:text-[16px]"
           >
-            Page
+          
           </a>
 
           <button className="cursor-pointer rounded-[10px] border border-white/20 bg-white/10 px-[14px] py-[8px] text-white backdrop-blur-[10px] transition duration-300 hover:bg-white/15 sm:px-[18px] sm:py-[10px]">
-            Button
+            Settings
           </button>
         </div>
       </nav>

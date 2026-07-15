@@ -517,8 +517,64 @@ const nodeTypes = {
   custom: CustomNode,
 };
 
+const nodesToFlow = (nodesList: any[]) => {
+  if (!nodesList || nodesList.length === 0) {
+    return { flowNodes: [], flowEdges: [] };
+  }
+
+  const flowNodes = nodesList.map((n: any) => ({
+    id: n.id,
+    type: "custom",
+    position: { x: n.position_x ?? 0, y: n.position_y ?? 0 },
+    width: n.width ?? 180,
+    height: n.height ?? 60,
+    data: {
+      label: n.label,
+      shape: n.shape || "rectangle",
+      color: n.color || "#ffffff",
+    },
+  }));
+
+  const flowEdges: any[] = [];
+  const edgeSet = new Set<string>();
+
+  nodesList.forEach((n: any) => {
+    (n.children_ids || []).forEach((childId: string) => {
+      const edgeId = `edge-${n.id}-${childId}`;
+      if (!edgeSet.has(edgeId)) {
+        edgeSet.add(edgeId);
+        flowEdges.push({
+          id: edgeId,
+          source: n.id,
+          target: childId,
+          animated: true,
+          type: "bezier",
+        });
+      }
+    });
+
+    (n.lateral_link_ids || []).forEach((lateralId: string) => {
+      const sortedIds = [n.id, lateralId].sort();
+      const edgeId = `edge-lateral-${sortedIds[0]}-${sortedIds[1]}`;
+      if (!edgeSet.has(edgeId)) {
+        edgeSet.add(edgeId);
+        flowEdges.push({
+          id: edgeId,
+          source: n.id,
+          target: lateralId,
+          animated: true,
+          type: "default",
+        });
+      }
+    });
+  });
+
+  return { flowNodes, flowEdges };
+};
+
 function WorkspaceContent() {
   const idRef = useRef(2);
+  const lastSyncedNodesRef = useRef<any[]>([]);
 
 
   const { mapId } = useParams();
@@ -569,76 +625,106 @@ function WorkspaceContent() {
   const [selectedEdge, setSelectedEdge] =
     useState<string | null>(null);
 
-  const createNode = (shape: string) => {
-    const id = crypto.randomUUID();
-
-    setNodes((nds: any) => [
-      ...nds,
-      {
-        id,
+  const createNode = async (shape: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await api.post(
+        `/maps/${mapId}/nodes`,
+        {
+          label: shape.charAt(0).toUpperCase() + shape.slice(1),
+          position_x: 200 + Math.random() * 400,
+          position_y: 100 + Math.random() * 300,
+          width: 180,
+          height: 60,
+          shape: shape,
+          color: "#ffffff",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      
+      const newNode = response.data.node || response.data;
+      const formattedNode = {
+        id: newNode.id,
         type: "custom",
-        position: {
-          x: 200 + Math.random() * 400,
-          y: 100 + Math.random() * 300,
-        },
+        position: { x: newNode.position_x, y: newNode.position_y },
         data: {
-          label:
-            shape.charAt(0).toUpperCase() +
-            shape.slice(1),
-        shape,
-        color: "#ffffff",
+          label: newNode.label,
+          shape: newNode.shape || shape,
+          color: newNode.color || "#ffffff",
         },
-      },
-    ]);
+      };
+
+      setNodes((nds: any) => [...nds, formattedNode]);
+      lastSyncedNodesRef.current.push(JSON.parse(JSON.stringify(formattedNode)));
+    } catch (err) {
+      console.error("Failed to create node:", err);
+    }
   };
 
   const onDragOver = useCallback(
-  (event: DragEvent | any) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  },
-  []
-);
+    (event: DragEvent | any) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+    },
+    []
+  );
 
-const onDrop = useCallback(
-  (event: DragEvent | any) => {
-    event.preventDefault();
+  const onDrop = useCallback(
+    async (event: DragEvent | any) => {
+      event.preventDefault();
 
-    const shape =
-      event.dataTransfer.getData(
-        "application/reactflow"
-      );
+      const shape = event.dataTransfer.getData("application/reactflow");
+      if (!shape) return;
 
-    if (!shape) return;
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
 
-    const position =
-  screenToFlowPosition({
-    x: event.clientX,
-    y: event.clientY,
-  });
+      try {
+        const token = localStorage.getItem("token");
+        const response = await api.post(
+          `/maps/${mapId}/nodes`,
+          {
+            label: shape.charAt(0).toUpperCase() + shape.slice(1),
+            position_x: position.x,
+            position_y: position.y,
+            width: 180,
+            height: 60,
+            shape: shape,
+            color: "#ffffff",
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-    const id = crypto.randomUUID();
+        const newNode = response.data.node || response.data;
+        const formattedNode = {
+          id: newNode.id,
+          type: "custom",
+          position: { x: newNode.position_x, y: newNode.position_y },
+          data: {
+            label: newNode.label,
+            shape: newNode.shape || shape,
+            color: newNode.color || "#ffffff",
+          },
+        };
 
-    setNodes((nds) => [
-      ...nds,
-      {
-        id,
-        type: "custom",
-        position,
-        data: {
-          label:
-            shape.charAt(0).toUpperCase() +
-            shape.slice(1),
-          shape,
-          color: "#ffffff",
-        },
-      },
-    ]);
-  },
-  [
-    screenToFlowPosition
-  ]
-);
+        setNodes((nds) => [...nds, formattedNode]);
+        lastSyncedNodesRef.current.push(JSON.parse(JSON.stringify(formattedNode)));
+      } catch (err) {
+        console.error("Failed to drop and create node:", err);
+      }
+    },
+    [mapId, screenToFlowPosition]
+  );
 
   const onNodesChange = useCallback(
     (changes: any) => {
@@ -659,7 +745,10 @@ const onDrop = useCallback(
   );
 
   const onConnect = useCallback(
-    (params: any) => {
+    async (params: any) => {
+      const { source, target } = params;
+      if (!source || !target) return;
+
       setEdges((eds: any) =>
         addEdge(
           {
@@ -670,12 +759,69 @@ const onDrop = useCallback(
           eds
         )
       );
+
+      try {
+        const token = localStorage.getItem("token");
+        const nodeRes = await api.get(`/maps/${mapId}/nodes/${source}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const nodeData = nodeRes.data.node || nodeRes.data;
+
+        const currentChildren = nodeData.children_ids || [];
+        if (!currentChildren.includes(target)) {
+          const nextChildren = [...currentChildren, target];
+          await api.patch(`/maps/${mapId}/nodes/${source}`, {
+            children_ids: nextChildren
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        }
+      } catch (err) {
+        console.error("Failed to connect nodes on backend:", err);
+      }
     },
-    []
+    [mapId]
+  );
+
+  const onEdgesDelete = useCallback(
+    async (edgesToDelete: any[]) => {
+      const token = localStorage.getItem("token");
+      
+      for (const edge of edgesToDelete) {
+        const { source, target, type } = edge;
+        if (!source || !target) continue;
+
+        try {
+          const nodeRes = await api.get(`/maps/${mapId}/nodes/${source}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const nodeData = nodeRes.data.node || nodeRes.data;
+
+          if (type === "default") {
+            const nextLateral = (nodeData.lateral_link_ids || []).filter((id: string) => id !== target);
+            await api.patch(`/maps/${mapId}/nodes/${source}`, {
+              lateral_link_ids: nextLateral
+            }, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+          } else {
+            const nextChildren = (nodeData.children_ids || []).filter((id: string) => id !== target);
+            await api.patch(`/maps/${mapId}/nodes/${source}`, {
+              children_ids: nextChildren
+            }, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+          }
+        } catch (err) {
+          console.error("Failed to delete edge on backend:", err);
+        }
+      }
+    },
+    [mapId]
   );
 
   useEffect(() => {
-    const handleDelete = (e: KeyboardEvent) => {
+    const handleDelete = async (e: KeyboardEvent) => {
       if (e.key !== "Delete") return;
 
       if (selectedEdge) {
@@ -686,27 +832,41 @@ const onDrop = useCallback(
           )
         );
 
+        const edgeObj = edges.find((edge: any) => edge.id === selectedEdge);
+        if (edgeObj) {
+          onEdgesDelete([edgeObj]);
+        }
+
         setSelectedEdge(null);
         return;
       }
 
       if (selectedNode) {
-        setNodes((nds: any) =>
-          nds.filter(
-            (node: any) =>
-              node.id !== selectedNode
-          )
-        );
+        try {
+          const token = localStorage.getItem("token");
+          await api.delete(`/maps/${mapId}/nodes/${selectedNode}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
 
-        setEdges((eds: any) =>
-          eds.filter(
-            (edge: any) =>
-              edge.source !==
-                selectedNode &&
-              edge.target !==
-                selectedNode
-          )
-        );
+          setNodes((nds: any) =>
+            nds.filter(
+              (node: any) =>
+                node.id !== selectedNode
+            )
+          );
+
+          setEdges((eds: any) =>
+            eds.filter(
+              (edge: any) =>
+                edge.source !==
+                  selectedNode &&
+                edge.target !==
+                  selectedNode
+            )
+          );
+        } catch (err) {
+          console.error("Failed to delete node on backend:", err);
+        }
 
         setSelectedNode(null);
       }
@@ -725,6 +885,9 @@ const onDrop = useCallback(
   }, [
     selectedNode,
     selectedEdge,
+    edges,
+    mapId,
+    onEdgesDelete
   ]);
 
   const exportMindMap = () => {
@@ -856,105 +1019,107 @@ const sendCollaboratorInvite = async () => {
   }
 };
 
-useEffect(() => {
-  if (!mapId) return;
+  useEffect(() => {
+    if (!mapId) return;
 
-  const loadMap = async () => {
-    try {
-      setLoadingMap(true);
+    const loadMap = async () => {
+      try {
+        setLoadingMap(true);
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
 
+        // 1. Fetch map metadata
+        const response = await api.get(`/maps/${mapId}`, { headers });
+        const map = response.data.map ?? response.data;
+        setMindMapName(map.title);
 
-      const token = localStorage.getItem("token");
+        // 2. Fetch map nodes
+        const nodesResponse = await api.get(`/maps/${mapId}/nodes`, { headers });
+        const nodesList = nodesResponse.data.nodes || nodesResponse.data || [];
 
-const response = await api.get(`/maps/${mapId}`, {
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-});
+        // 3. Convert to React Flow format
+        const { flowNodes, flowEdges } = nodesToFlow(nodesList);
 
+        setNodes(flowNodes);
+        setEdges(flowEdges);
+        lastSyncedNodesRef.current = JSON.parse(JSON.stringify(flowNodes));
+        setHasLoadedOnce(true);
+      } catch (err) {
+        console.error("Failed to load map:", err);
+      } finally {
+        setLoadingMap(false);
+      }
+    };
 
-const map = response.data.map ?? response.data;
+    loadMap();
+  }, [mapId]);
 
-      setMindMapName(map.title);
+  // Debounced auto-save effect for node changes (dragging, colors, shapes, text updates)
+  useEffect(() => {
+    if (!mapId || loadingMap) return;
 
-      setNodes(map.nodes || []);
+    const timer = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const headers = { Authorization: `Bearer ${token}` };
 
-      setEdges(map.edges || []);
+        for (const localNode of nodes) {
+          const lastSynced = lastSyncedNodesRef.current.find((n) => n.id === localNode.id);
 
-      setHasLoadedOnce(true);
+          if (!lastSynced) continue;
 
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingMap(false);
-    }
-  };
+          const hasChanged =
+            localNode.data.label !== lastSynced.data.label ||
+            localNode.position.x !== lastSynced.position.x ||
+            localNode.position.y !== lastSynced.position.y ||
+            localNode.data.shape !== lastSynced.data.shape ||
+            localNode.data.color !== lastSynced.data.color;
 
-  loadMap();
-
-}, [mapId]);
-
-useEffect(() => {
-  if (!mapId) return;
-
-  if (loadingMap) return;
-
-  const timer = setTimeout(async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      const mappedNodes = nodes.map((n: any) => {
-        const children_ids = edges
-          .filter((e: any) => e.source === n.id && e.type !== "default")
-          .map((e: any) => e.target);
-
-        const lateral_link_ids = edges
-          .filter((e: any) => e.source === n.id && e.type === "default")
-          .map((e: any) => e.target);
-
-        return {
-          id: n.id,
-          label: n.data.label,
-          shape: n.data.shape || "rectangle",
-          color: n.data.color || "#ffffff",
-          children_ids,
-          lateral_link_ids,
-          position_x: n.position.x,
-          position_y: n.position.y,
-          width: n.width || 180,
-          height: n.height || 60,
-        };
-      });
-
-      await api.post(
-        `/maps/${mapId}/persist`,
-        {
-          nodes: mappedNodes,
-          rootNodeId: nodes.find((n: any) => n.type === "input")?.id || nodes[0]?.id || null,
-          title: mindMapName,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          if (hasChanged) {
+            await api.patch(
+              `/maps/${mapId}/nodes/${localNode.id}`,
+              {
+                label: localNode.data.label,
+                position_x: localNode.position.x,
+                position_y: localNode.position.y,
+                shape: localNode.data.shape,
+                color: localNode.data.color,
+              },
+              { headers }
+            );
+          }
         }
-      );
-      console.log("Auto-saved mind map state!");
-    } catch (err) {
-      console.error("Auto-save failed:", err);
-    }
-  }, 1000);
 
-  return () => clearTimeout(timer);
+        lastSyncedNodesRef.current = JSON.parse(JSON.stringify(nodes));
+      } catch (err) {
+        console.error("Failed to auto-sync nodes:", err);
+      }
+    }, 1500);
 
-}, [
-  mapId,
-  nodes,
-  edges,
-  mindMapName,
-  loadingMap,
-]);
+    return () => clearTimeout(timer);
+  }, [mapId, nodes, loadingMap]);
+
+  // Debounced title auto-save
+  useEffect(() => {
+    if (!mapId || loadingMap) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        await api.patch(
+          `/maps/${mapId}`,
+          { title: mindMapName },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } catch (err) {
+        console.error("Failed to sync map title:", err);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [mindMapName, mapId, loadingMap]);
 
   return (
     <div
@@ -1455,6 +1620,8 @@ onDragOver={onDragOver}
             onConnect={
               onConnect
             }
+            onNodeDragStop={onNodeDragStop}
+            onEdgesDelete={onEdgesDelete}
             onNodeClick={(_, node) => {
   setSelectedNode(node.id);
 

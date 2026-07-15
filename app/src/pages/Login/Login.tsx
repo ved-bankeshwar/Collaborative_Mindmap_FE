@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
+import { signInWithPopup } from "firebase/auth";
 import Navbar from "../../components/Navbar";
 import bgVideo from "../../assets/videos/bgvideo.mp4";
 import api from "../../api/api";
+import { ensureFirebaseInitialized, getFirebaseAuth, googleProvider } from "../../lib/firebase";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -47,9 +48,12 @@ const Login: React.FC = () => {
   };
 
   // -------------------- Google Login --------------------
-  const handleGoogleLogin = async (credentialResponse: any) => {
+  const handleGoogleLogin = async () => {
     try {
-      const idToken = credentialResponse.credential;
+      setLoading(true);
+      await ensureFirebaseInitialized();
+      const result = await signInWithPopup(getFirebaseAuth(), googleProvider);
+      const idToken = await result.user.getIdToken();
 
       const response = await api.post("/auth/google", {
         idToken,
@@ -67,8 +71,10 @@ const Login: React.FC = () => {
       if (error.response) {
         alert(error.response.data.message || "Google Login Failed");
       } else {
-        alert("Unable to connect to backend");
+        alert(error.message || "Google Login Failed");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -122,14 +128,13 @@ const Login: React.FC = () => {
               />
 
               {/* Google Login */}
-              <div className="flex justify-center">
-                <GoogleLogin
-                  onSuccess={handleGoogleLogin}
-                  onError={() => {
-                    alert("Google Login Failed");
-                  }}
-                />
-              </div>
+              <button
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className="w-full rounded-xl border border-white/20 bg-white/10 py-4 text-white font-medium backdrop-blur-md transition-all duration-300 hover:bg-white/20 disabled:opacity-50"
+              >
+                {loading ? "Connecting..." : "Sign in with Google"}
+              </button>
 
               {/* Email Login */}
               <button

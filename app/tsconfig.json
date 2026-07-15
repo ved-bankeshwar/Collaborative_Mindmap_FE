@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "es6"],
+    "target": "es2016", // 1. Updated from 'es5' to allow compilation of modern features
+    "lib": [
+      "dom", 
+      "dom.iterable", 
+      "es2016"          // 2. Updated from 'es6' to include Array.prototype.includes
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -19,6 +23,7 @@
     "my-app/src/components",
     "my-app/src/context",
     "my-app/src/routes",
-    "my-app/reportWebVitals.js"
-, "my-app/setupTests.js"  ]
+    "my-app/reportWebVitals.js",
+    "my-app/setupTests.js"
+  ]
 }

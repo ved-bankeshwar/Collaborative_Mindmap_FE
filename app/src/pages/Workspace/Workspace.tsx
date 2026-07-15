@@ -5,6 +5,8 @@ import React, {
   useState,
 } from "react";
 
+import api from "../../api/api";
+
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 
@@ -23,6 +25,8 @@ import ReactFlow, {
 } from "reactflow";
 
 import 'reactflow/dist/style.css';
+
+import { useParams } from "react-router-dom";
 
 const styles = {
   workspaceWrapper: {
@@ -516,12 +520,19 @@ const nodeTypes = {
 function WorkspaceContent() {
   const idRef = useRef(2);
 
+
+  const { mapId } = useParams();
+
   const reactFlowWrapper =
   useRef<HTMLDivElement>(null);
 
 
   const [showExportMenu, setShowExportMenu] =
   useState(false);
+
+  const [loadingMap, setLoadingMap] = useState(true);
+
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const { screenToFlowPosition } =
   useReactFlow();
@@ -535,21 +546,16 @@ function WorkspaceContent() {
 
   const flowRef = useRef<HTMLDivElement>(null);
 
-  const [nodes, setNodes] = useState<any[]>([
-    {
-      id: "1",
-      type: "custom",
-      position: {
-        x: 250,
-        y: 150,
-      },
-      data: {
-        label: "Central Idea",
-        shape: "rectangle",
-      },
-    },
-  ]);
+  const [nodes, setNodes] = useState<any[]>([]);
   
+  const [showCollaboratorModal, setShowCollaboratorModal] = useState(false);
+
+  const [collaboratorEmail, setCollaboratorEmail] = useState("");
+
+  const [collaboratorPermission, setCollaboratorPermission] =
+    useState<"view" | "edit">("edit");
+
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   const [edges, setEdges] =
     useState<any[]>([]);
@@ -564,7 +570,7 @@ function WorkspaceContent() {
     useState<string | null>(null);
 
   const createNode = (shape: string) => {
-    const id = `${idRef.current++}`;
+    const id = crypto.randomUUID();
 
     setNodes((nds: any) => [
       ...nds,
@@ -611,7 +617,7 @@ const onDrop = useCallback(
     y: event.clientY,
   });
 
-    const id = `${idRef.current++}`;
+    const id = crypto.randomUUID();
 
     setNodes((nds) => [
       ...nds,
@@ -768,6 +774,8 @@ const onDrop = useCallback(
   }
 };
 
+
+
 const exportPDF = async () => {
   if (!flowRef.current) return;
 
@@ -802,6 +810,115 @@ const exportPDF = async () => {
   }
 };
 
+const sendCollaboratorInvite = async () => {
+  if (!collaboratorEmail.trim()) {
+    alert("Enter an email.");
+    return;
+  }
+
+  try {
+    setSendingInvite(true);
+
+    const token = localStorage.getItem("token");
+
+    await api.post(
+      "/maps/requests/request-access",
+      {
+        email: collaboratorEmail,
+        permission:
+          collaboratorPermission,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    alert("Invitation sent!");
+
+    setCollaboratorEmail("");
+
+    setCollaboratorPermission(
+      "edit"
+    );
+
+    setShowCollaboratorModal(false);
+
+  } catch (err) {
+    console.error(err);
+
+    alert(
+      "Unable to send invitation."
+    );
+  } finally {
+    setSendingInvite(false);
+  }
+};
+
+useEffect(() => {
+  if (!mapId) return;
+
+  const loadMap = async () => {
+    try {
+      setLoadingMap(true);
+
+
+      const token = localStorage.getItem("token");
+
+const response = await api.get(`/maps/${mapId}`, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+
+
+const map = response.data.map ?? response.data;
+
+      setMindMapName(map.title);
+
+      setNodes(map.nodes || []);
+
+      setEdges(map.edges || []);
+
+      setHasLoadedOnce(true);
+
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingMap(false);
+    }
+  };
+
+  loadMap();
+
+}, [mapId]);
+
+useEffect(() => {
+  if (!mapId) return;
+
+  if (loadingMap) return;
+
+  const timer = setTimeout(async () => {
+    try {
+
+      const token =
+        localStorage.getItem("token");
+    } catch (err) {
+      console.error(err);
+    }
+  }, 700);
+
+  return () => clearTimeout(timer);
+
+}, [
+  mapId,
+  nodes,
+  edges,
+  mindMapName,
+  loadingMap,
+]);
+
   return (
     <div
       style={
@@ -819,7 +936,9 @@ const exportPDF = async () => {
           }
         >
 
+
           <input
+          autoFocus
   value={mindMapName}
   onChange={(e) =>
     setMindMapName(e.target.value)
@@ -835,6 +954,18 @@ const exportPDF = async () => {
     width: "350px",
   }}
 />
+
+<div
+style={{
+fontSize:12,
+color:"#cbd5e1",
+marginTop:4
+}}
+>
+
+
+</div>
+
         </div>
 
         <div
@@ -843,12 +974,15 @@ const exportPDF = async () => {
           }
         >
           <button
-            style={
-              styles.primaryBtn as React.CSSProperties
-            }
-          >
-            Add Collaborators
-          </button>
+  onClick={() =>
+    setShowCollaboratorModal(true)
+  }
+  style={
+    styles.primaryBtn as React.CSSProperties
+  }
+>
+  Add Collaborators
+</button>
 
           <div
   style={{
@@ -1309,7 +1443,7 @@ onDragOver={onDragOver}
                   node.data.label
                 );
 
-              if (!label)
+              if (!label?.trim())
                 return;
 
               setNodes(
@@ -1344,6 +1478,112 @@ onDragOver={onDragOver}
           </div>
         </main>
       </div>
+          {
+showCollaboratorModal && (
+<div
+style={{
+position:"fixed",
+inset:0,
+background:"rgba(0,0,0,.45)",
+display:"flex",
+justifyContent:"center",
+alignItems:"center",
+zIndex:9999
+}}
+>
+
+<div
+style={{
+width:430,
+background:"#1e293b",
+padding:24,
+borderRadius:14,
+color:"white"
+}}
+>
+
+<h2>Add Collaborator</h2>
+
+<input
+type="email"
+placeholder="Email"
+value={collaboratorEmail}
+onChange={(e)=>
+setCollaboratorEmail(e.target.value)
+}
+style={{
+width:"100%",
+padding:12,
+marginBottom:20,
+borderRadius:8
+}}
+/>
+
+<select
+value={collaboratorPermission}
+onChange={(e)=>
+setCollaboratorPermission(
+e.target.value as
+"view"|"edit"
+)
+}
+style={{
+width:"100%",
+padding:12,
+marginBottom:20,
+borderRadius:8
+}}
+>
+
+<option value="view">
+View
+</option>
+
+<option value="edit">
+Edit
+</option>
+
+</select>
+
+<div
+style={{
+display:"flex",
+justifyContent:"flex-end",
+gap:10
+}}
+>
+
+<button
+onClick={()=>
+setShowCollaboratorModal(false)
+}
+>
+Cancel
+</button>
+
+<button
+onClick={sendCollaboratorInvite}
+disabled={sendingInvite}
+>
+
+{
+sendingInvite
+?
+"Sending..."
+:
+"Send Invite"
+}
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+)
+}
+      
     </div>
   );
 }

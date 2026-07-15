@@ -901,13 +901,50 @@ useEffect(() => {
 
   const timer = setTimeout(async () => {
     try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-      const token =
-        localStorage.getItem("token");
+      const mappedNodes = nodes.map((n: any) => {
+        const children_ids = edges
+          .filter((e: any) => e.source === n.id && e.type !== "default")
+          .map((e: any) => e.target);
+
+        const lateral_link_ids = edges
+          .filter((e: any) => e.source === n.id && e.type === "default")
+          .map((e: any) => e.target);
+
+        return {
+          id: n.id,
+          label: n.data.label,
+          shape: n.data.shape || "rectangle",
+          color: n.data.color || "#ffffff",
+          children_ids,
+          lateral_link_ids,
+          position_x: n.position.x,
+          position_y: n.position.y,
+          width: n.width || 180,
+          height: n.height || 60,
+        };
+      });
+
+      await api.post(
+        `/maps/${mapId}/persist`,
+        {
+          nodes: mappedNodes,
+          rootNodeId: nodes.find((n: any) => n.type === "input")?.id || nodes[0]?.id || null,
+          title: mindMapName,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("Auto-saved mind map state!");
     } catch (err) {
-      console.error(err);
+      console.error("Auto-save failed:", err);
     }
-  }, 700);
+  }, 1000);
 
   return () => clearTimeout(timer);
 

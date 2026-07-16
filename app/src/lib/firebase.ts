@@ -69,3 +69,8 @@ export async function signInWithGooglePopup(): Promise<UserCredential> {
 
   return popupPromise;
 }
+
+// Eagerly initialize Firebase Auth when the script loads to eliminate initial click delays
+ensureFirebaseInitialized().catch((err) => {
+  console.warn("Eager Firebase initialization failed:", err);
+});

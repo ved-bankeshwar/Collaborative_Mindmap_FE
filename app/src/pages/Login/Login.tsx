@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signInWithPopup } from "firebase/auth";
 import Navbar from "../../components/Navbar";
 import bgVideo from "../../assets/videos/bgvideo.mp4";
 import api from "../../api/api";
-import { ensureFirebaseInitialized, getFirebaseAuth, googleProvider } from "../../lib/firebase";
+import { signInWithGooglePopup } from "../../lib/firebase";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -51,8 +50,7 @@ const Login: React.FC = () => {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      await ensureFirebaseInitialized();
-      const result = await signInWithPopup(getFirebaseAuth(), googleProvider);
+      const result = await signInWithGooglePopup();
       const idToken = await result.user.getIdToken();
 
       const response = await api.post("/auth/google", {
@@ -67,6 +65,14 @@ const Login: React.FC = () => {
       navigate("/dashboard");
     } catch (error: any) {
       console.error(error);
+
+      // Ignore user-initiated cancellation or popup block errors
+      if (
+        error.code === "auth/popup-closed-by-user" ||
+        error.code === "auth/cancelled-popup-request"
+      ) {
+        return;
+      }
 
       if (error.response) {
         alert(error.response.data.message || "Google Login Failed");

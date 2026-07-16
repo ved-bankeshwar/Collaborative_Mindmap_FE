@@ -1,10 +1,11 @@
 import { initializeApp, getApps, type FirebaseApp, type FirebaseOptions } from "firebase/app";
-import { getAuth, GoogleAuthProvider, type Auth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, type Auth, signInWithPopup, type UserCredential } from "firebase/auth";
 import api from "../api/api";
 
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 let initPromise: Promise<void> | null = null;
+let popupPromise: Promise<UserCredential> | null = null;
 
 function configFromEnv(): FirebaseOptions {
   return {
@@ -54,3 +55,17 @@ export function getFirebaseAuth(): Auth {
 }
 
 export const googleProvider = new GoogleAuthProvider();
+
+export async function signInWithGooglePopup(): Promise<UserCredential> {
+  await ensureFirebaseInitialized();
+  if (popupPromise) {
+    return popupPromise;
+  }
+
+  const authInstance = getFirebaseAuth();
+  popupPromise = signInWithPopup(authInstance, googleProvider).finally(() => {
+    popupPromise = null;
+  });
+
+  return popupPromise;
+}

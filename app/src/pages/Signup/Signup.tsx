@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import bgVideo from "../../assets/videos/bgvideo.mp4";
 import api from "../../api/api";
+import { signInWithGooglePopup } from "../../lib/firebase";
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +41,44 @@ const Signup: React.FC = () => {
         alert(error.response.data.message || "Registration failed");
       } else {
         alert("Unable to connect to backend");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // -------------------- Google Signup --------------------
+  const handleGoogleSignup = async () => {
+    try {
+      setLoading(true);
+      const result = await signInWithGooglePopup();
+      const idToken = await result.user.getIdToken();
+
+      const response = await api.post("/auth/google", {
+        idToken,
+      });
+
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      alert("Google Registration Successful!");
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error(error);
+
+      // Ignore user-initiated cancellation or popup block errors
+      if (
+        error.code === "auth/popup-closed-by-user" ||
+        error.code === "auth/cancelled-popup-request"
+      ) {
+        return;
+      }
+
+      if (error.response) {
+        alert(error.response.data.message || "Google Registration Failed");
+      } else {
+        alert(error.message || "Google Registration Failed");
       }
     } finally {
       setLoading(false);
@@ -100,6 +139,16 @@ const Signup: React.FC = () => {
                 className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-4 text-white placeholder-gray-300 outline-none"
               />
 
+              {/* Google Sign Up */}
+              <button
+                onClick={handleGoogleSignup}
+                disabled={loading}
+                className="w-full rounded-xl border border-white/20 bg-white/10 py-4 text-white font-medium backdrop-blur-md transition-all duration-300 hover:bg-white/20 disabled:opacity-50"
+              >
+                {loading ? "Connecting..." : "Sign up with Google"}
+              </button>
+
+              {/* Email Sign Up */}
               <button
                 onClick={handleSignup}
                 disabled={loading}
